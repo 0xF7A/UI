@@ -193,10 +193,10 @@ end
 --------------------------------------------------------------------------------
 
 local function _makeDraggable(gui, handle, connections)
-    -- Always use manual drag (title bar only).
-    -- Native .Draggable makes the entire root draggable, which
-    -- conflicts with sliders and other interactive controls.
-    local dragging, dragStart, startPos
+    -- Manual drag via title bar only.
+    -- Uses global UserInputService so fast mouse movement doesn't drop drag.
+    local dragging = false
+    local dragStart, startPos
 
     local c1 = handle.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1
@@ -204,15 +204,11 @@ local function _makeDraggable(gui, handle, connections)
             dragging = true
             dragStart = input.Position
             startPos = gui.Position
-            input.Changed:Connect(function()
-                if input.UserInputState == Enum.UserInputState.End then
-                    dragging = false
-                end
-            end)
         end
     end)
 
-    local c2 = handle.InputChanged:Connect(function(input)
+    -- Global move tracking — keeps dragging even if cursor leaves the title bar
+    local c2 = UserInputService.InputChanged:Connect(function(input)
         if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement
             or input.UserInputType == Enum.UserInputType.Touch) then
             local delta = input.Position - dragStart
@@ -223,9 +219,18 @@ local function _makeDraggable(gui, handle, connections)
         end
     end)
 
+    -- Global release — reliable even at high speed
+    local c3 = UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1
+            or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = false
+        end
+    end)
+
     if connections then
         table.insert(connections, c1)
         table.insert(connections, c2)
+        table.insert(connections, c3)
     end
 end
 
