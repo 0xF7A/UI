@@ -193,9 +193,9 @@ end
 --------------------------------------------------------------------------------
 
 local function _makeDraggable(gui, handle, connections)
-    local nativeOk = pcall(function() gui.Draggable = true end)
-    if nativeOk then return end
-
+    -- Always use manual drag (title bar only).
+    -- Native .Draggable makes the entire root draggable, which
+    -- conflicts with sliders and other interactive controls.
     local dragging, dragStart, startPos
 
     local c1 = handle.InputBegan:Connect(function(input)
