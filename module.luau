@@ -192,39 +192,42 @@ end
 -- Draggable fallback
 --------------------------------------------------------------------------------
 
+local RunService = game:GetService("RunService")
+
 local function _makeDraggable(gui, handle, connections)
-    -- Manual drag via title bar only.
-    -- Uses global UserInputService so fast mouse movement doesn't drop drag.
+    -- RenderStepped polling — most reliable across all executors.
+    -- Polls GetMouseLocation() every frame instead of relying on
+    -- InputChanged events which some executors don't fire properly.
     local dragging = false
-    local dragStart, startPos
+    local offsetX, offsetY = 0, 0
 
     local c1 = handle.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1
             or input.UserInputType == Enum.UserInputType.Touch then
             dragging = true
-            dragStart = input.Position
-            startPos = gui.Position
+            local mouse = UserInputService:GetMouseLocation()
+            local absPos = gui.AbsolutePosition
+            offsetX = absPos.X - mouse.X
+            offsetY = absPos.Y - mouse.Y
         end
     end)
 
-    -- Global move tracking — keeps dragging even if cursor leaves the title bar
-    local c2 = UserInputService.InputChanged:Connect(function(input)
-        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement
-            or input.UserInputType == Enum.UserInputType.Touch) then
-            local delta = input.Position - dragStart
-            gui.Position = UDim2.new(
-                startPos.X.Scale, startPos.X.Offset + delta.X,
-                startPos.Y.Scale, startPos.Y.Offset + delta.Y
-            )
-        end
-    end)
-
-    -- Global release — reliable even at high speed
-    local c3 = UserInputService.InputEnded:Connect(function(input)
+    local c2 = UserInputService.InputEnded:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1
             or input.UserInputType == Enum.UserInputType.Touch then
             dragging = false
         end
+    end)
+
+    -- Poll mouse position every frame while dragging
+    local inset = game:GetService("GuiService"):GetGuiInset()
+    local c3 = RunService.RenderStepped:Connect(function()
+        if not dragging then return end
+        local mouse = UserInputService:GetMouseLocation()
+        gui.Position = UDim2.fromOffset(
+            mouse.X + offsetX,
+            mouse.Y + offsetY - inset.Y
+        )
     end)
 
     if connections then
