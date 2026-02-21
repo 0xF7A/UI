@@ -7,7 +7,7 @@
 ## Quick Start
 
 ```lua
-local UI = loadstring(readfile("ui_module.luau"))()
+local UI = loadstring(game:HttpGet("https://raw.githubusercontent.com/0xF7A/UI/refs/heads/main/module.luau"))()
 
 local hub = UI.new("my cheat", 520, 380)
 
@@ -320,7 +320,7 @@ To change the accent color, modify `COLORS.accent`, `COLORS.accentHov`, `COLORS.
 ## Full Example
 
 ```lua
-local UI = loadstring(readfile("ui_module.luau"))()
+local UI = loadstring(game:HttpGet("https://raw.githubusercontent.com/0xF7A/UI/refs/heads/main/module.luau"))()
 local hub = UI.new("sense v2", 520, 380)
 
 -- Aimbot tab
