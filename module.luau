@@ -2,10 +2,11 @@
 -- Services & upvalues
 --------------------------------------------------------------------------------
 
-local TweenService    = game:GetService("TweenService")
+local TweenService     = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
-local Players         = game:GetService("Players")
-local HttpService     = game:GetService("HttpService")
+local Players          = game:GetService("Players")
+local HttpService      = game:GetService("HttpService")
+local Lighting         = game:GetService("Lighting")
 
 --------------------------------------------------------------------------------
 -- Stealth: random name generator
@@ -27,22 +28,33 @@ end
 --------------------------------------------------------------------------------
 
 local COLORS = {
-    bg         = Color3.fromRGB(20, 20, 20),
-    titlebar   = Color3.fromRGB(30, 30, 30),
-    tab        = Color3.fromRGB(30, 30, 30),
-    tabActive  = Color3.fromRGB(45, 45, 45),
-    section    = Color3.fromRGB(28, 28, 28),
-    element    = Color3.fromRGB(38, 38, 38),
-    elementHov = Color3.fromRGB(48, 48, 48),
-    accent     = Color3.fromRGB(80, 140, 255),
-    accentOff  = Color3.fromRGB(60, 60, 60),
-    success    = Color3.fromRGB(80, 220, 120),
-    danger     = Color3.fromRGB(220, 70, 70),
-    text       = Color3.fromRGB(220, 220, 220),
-    subtext    = Color3.fromRGB(140, 140, 140),
-    divider    = Color3.fromRGB(45, 45, 45),
-    slider     = Color3.fromRGB(55, 55, 55),
-    sliderFill = Color3.fromRGB(80, 140, 255),
+    -- macOS Sonoma dark-mode acrylic tones
+    bg         = Color3.fromRGB(30, 30, 32),     -- window body
+    titlebar   = Color3.fromRGB(40, 40, 44),     -- title bar
+    tab        = Color3.fromRGB(36, 36, 40),     -- sidebar
+    tabActive  = Color3.fromRGB(58, 58, 64),     -- active tab highlight
+    section    = Color3.fromRGB(34, 34, 38),     -- section cards
+    element    = Color3.fromRGB(44, 44, 50),     -- controls bg
+    elementHov = Color3.fromRGB(56, 56, 62),     -- controls hover
+    accent     = Color3.fromRGB(0, 122, 255),    -- macOS blue
+    accentOff  = Color3.fromRGB(70, 70, 76),     -- toggle off
+    success    = Color3.fromRGB(52, 199, 89),    -- macOS green
+    danger     = Color3.fromRGB(255, 69, 58),    -- macOS red
+    text       = Color3.fromRGB(235, 235, 240),  -- primary text
+    subtext    = Color3.fromRGB(152, 152, 160),  -- secondary text
+    divider    = Color3.fromRGB(58, 58, 62),     -- separators
+    slider     = Color3.fromRGB(58, 58, 64),     -- slider track
+    sliderFill = Color3.fromRGB(0, 122, 255),    -- slider fill
+}
+
+-- Transparency levels for acrylic glass effect
+local TRANSPARENCY = {
+    root     = 0.15,   -- main window body
+    titlebar = 0.08,   -- title bar (slightly more opaque)
+    sidebar  = 0.12,   -- tab sidebar
+    content  = 0.18,   -- content area
+    section  = 0.10,   -- section cards
+    element  = 0.05,   -- controls
 }
 
 --------------------------------------------------------------------------------
@@ -132,6 +144,24 @@ local function listLayout(parent, dir, pad, halign, valign)
         HorizontalAlignment = halign or Enum.HorizontalAlignment.Left,
         VerticalAlignment   = valign or Enum.VerticalAlignment.Top,
         SortOrder           = Enum.SortOrder.LayoutOrder,
+    }, parent)
+end
+
+--- Lucide / image icon via getcustomasset()
+local function icon(parent, filePath, size, pos, color)
+    local asset = nil
+    if typeof(getcustomasset) == "function" then
+        local ok, result = pcall(getcustomasset, filePath)
+        if ok then asset = result end
+    end
+    if not asset then return nil end
+    return _new("ImageLabel", {
+        Size                  = size or UDim2.new(0, 16, 0, 16),
+        Position              = pos or UDim2.new(0, 0, 0.5, -8),
+        BackgroundTransparency = 1,
+        Image                 = asset,
+        ImageColor3           = color or COLORS.text,
+        ScaleType             = Enum.ScaleType.Fit,
     }, parent)
 end
 
@@ -245,25 +275,48 @@ function HubUI.new(title, width, height)
 
     self.gui.Parent = gethui()
 
-    -- Root frame
+    -- Acrylic blur effect (frosted glass behind the window)
+    self._blur = _new("BlurEffect", {
+        Size = 18,
+    }, Lighting)
+
+    -- Root frame (acrylic transparent)
     self.root = frame(self.gui,
         UDim2.new(0, self.width, 0, self.height),
         UDim2.new(0.5, -math.floor(self.width / 2), 0.5, -math.floor(self.height / 2)),
         COLORS.bg, true
     )
     self.root.Active = true
-    corner(self.root, 10)
-    stroke(self.root, COLORS.divider, 1)
+    self.root.BackgroundTransparency = TRANSPARENCY.root
+    corner(self.root, 12)
+    stroke(self.root, Color3.fromRGB(255, 255, 255), 1)
+    -- subtle white border like macOS
+    local rootStroke = self.root:FindFirstChildWhichIsA("UIStroke")
+    if rootStroke then rootStroke.Transparency = 0.82 end
 
-    -- Title bar
+    -- Title bar (slightly more opaque for contrast)
     self.titleBar = frame(self.root,
         UDim2.new(1, 0, 0, 38),
         UDim2.new(0, 0, 0, 0),
         COLORS.titlebar
     )
-    corner(self.titleBar, 10)
-    -- fix bottom rounded corners
-    frame(self.titleBar, UDim2.new(1, 0, 0.5, 0), UDim2.new(0, 0, 0.5, 0), COLORS.titlebar)
+    self.titleBar.BackgroundTransparency = TRANSPARENCY.titlebar
+    self.titleBar.ClipsDescendants = true
+    corner(self.titleBar, 12)
+    -- fill bottom half so only top corners are rounded
+    local titleFix = frame(self.titleBar,
+        UDim2.new(1, 0, 0, 20),
+        UDim2.new(0, 0, 1, -20),
+        COLORS.titlebar
+    )
+    titleFix.BackgroundTransparency = TRANSPARENCY.titlebar
+    -- bottom separator (subtle macOS-style 1px line)
+    local titleSep = frame(self.root,
+        UDim2.new(1, 0, 0, 1),
+        UDim2.new(0, 0, 0, 38),
+        Color3.fromRGB(255, 255, 255)
+    )
+    titleSep.BackgroundTransparency = 0.88
 
     -- Drag
     _makeDraggable(self.root, self.titleBar, self._connections)
@@ -327,24 +380,31 @@ function HubUI.new(title, width, height)
         table.insert(self._connections, c)
     end
 
-    -- Tab bar (left sidebar)
+    -- Tab bar (left sidebar — acrylic)
     self.tabBar = frame(self.root,
         UDim2.new(0, 110, 1, -38),
         UDim2.new(0, 0, 0, 38),
         COLORS.tab
     )
+    self.tabBar.BackgroundTransparency = TRANSPARENCY.sidebar
     listLayout(self.tabBar, Enum.FillDirection.Vertical, 2)
     padding(self.tabBar, 6)
 
-    -- Content area
+    -- Content area (acrylic)
     self.contentArea = frame(self.root,
         UDim2.new(1, -110, 1, -38),
         UDim2.new(0, 110, 0, 38),
         COLORS.bg, true
     )
+    self.contentArea.BackgroundTransparency = TRANSPARENCY.content
 
-    -- Divider between sidebar and content
-    frame(self.root, UDim2.new(0, 1, 1, -38), UDim2.new(0, 110, 0, 38), COLORS.divider)
+    -- Divider between sidebar and content (subtle white line)
+    local sideDiv = frame(self.root,
+        UDim2.new(0, 1, 1, -38),
+        UDim2.new(0, 110, 0, 38),
+        Color3.fromRGB(255, 255, 255)
+    )
+    sideDiv.BackgroundTransparency = 0.88
 
     return self
 end
@@ -357,6 +417,11 @@ function HubUI:destroy()
     -- Fade out
     tween(self.root, {BackgroundTransparency = 1}, 0.2)
     task.delay(0.25, function()
+        -- Remove blur effect
+        if self._blur then
+            pcall(function() self._blur:Destroy() end)
+            self._blur = nil
+        end
         -- Disconnect everything
         for _, conn in ipairs(self._connections) do
             pcall(function() conn:Disconnect() end)
@@ -388,11 +453,12 @@ function HubUI:addTab(name, icon)
     local Tab = {name = name, sections = {}}
 
     -- Tab button
+    local hasIcon = icon and #icon > 0
     Tab.button = _new("TextButton", {
         Size            = UDim2.new(1, 0, 0, 32),
         BackgroundColor3 = COLORS.tab,
         BorderSizePixel = 0,
-        Text            = (icon and (icon .. "  ") or "") .. name,
+        Text            = hasIcon and name or name,
         TextSize        = 12,
         TextColor3      = COLORS.subtext,
         Font            = Enum.Font.GothamBold,
@@ -401,7 +467,26 @@ function HubUI:addTab(name, icon)
     }, self.tabBar)
     if Tab.button then
         corner(Tab.button, 6)
-        padding(Tab.button, 8)
+        -- Lucide icon from file path via getcustomasset()
+        if hasIcon then
+            local ico = _new("ImageLabel", {
+                Size                  = UDim2.new(0, 14, 0, 14),
+                Position              = UDim2.new(0, 8, 0.5, -7),
+                BackgroundTransparency = 1,
+                ScaleType             = Enum.ScaleType.Fit,
+                ImageColor3           = COLORS.subtext,
+            }, Tab.button)
+            -- try getcustomasset for local icon file
+            if ico and typeof(getcustomasset) == "function" then
+                local ok, asset = pcall(getcustomasset, icon)
+                if ok and asset then ico.Image = asset end
+            end
+            Tab._icon = ico
+            -- offset text to make room for icon
+            padding(Tab.button, 28)
+        else
+            padding(Tab.button, 8)
+        end
     end
 
     -- Tab hover
@@ -962,10 +1047,12 @@ function HubUI:selectTab(tab)
         if t.page then t.page.Visible = false end
         tween(t.button, {BackgroundColor3 = COLORS.tab})
         if t.button then t.button.TextColor3 = COLORS.subtext end
+        if t._icon then tween(t._icon, {ImageColor3 = COLORS.subtext}) end
     end
     if tab.page then tab.page.Visible = true end
     tween(tab.button, {BackgroundColor3 = COLORS.tabActive})
     if tab.button then tab.button.TextColor3 = COLORS.text end
+    if tab._icon then tween(tab._icon, {ImageColor3 = COLORS.text}) end
     self.activeTab = tab
 end
 
