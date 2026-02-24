@@ -1,8 +1,8 @@
 --[[
     ╔══════════════════════════════════════════════════════════════════════╗
     ║  UI_CS  –  Half-Life 1 Style UI Library for Roblox Luau            ║
-    ║  Sharp corners · Dark olive · Amber/orange accent · Monospace      ║
-    ║  Compatible with gethui() / CoreGui fallback                       ║
+    ║  Sharp corners · Dark olive · Military green · 3D beveled          ║
+    ║  Static window · Custom toggle key · Executor-agnostic             ║
     ╚══════════════════════════════════════════════════════════════════════╝
 ]]
 
@@ -12,8 +12,6 @@
 
 local TweenService      = game:GetService("TweenService")
 local UserInputService  = game:GetService("UserInputService")
-local RunService        = game:GetService("RunService")
-local GuiService        = game:GetService("GuiService")
 local Players           = game:GetService("Players")
 
 local LocalPlayer = Players.LocalPlayer
@@ -31,51 +29,51 @@ local function uid()
 end
 
 --------------------------------------------------------------------------------
--- Palette  (Half-Life 1 — dark olive/charcoal, warm amber-orange accent)
+-- Palette  (Half-Life 1 — dark olive, military green, muted and utilitarian)
 --------------------------------------------------------------------------------
 
 local COLORS = {
-    -- Window  (dark charcoal with subtle warm olive tint)
-    bg           = Color3.fromRGB(14, 14, 12),
-    titlebar     = Color3.fromRGB(22, 22, 18),
-    border       = Color3.fromRGB(55, 50, 35),
+    -- Window  (dark charcoal with olive tint)
+    bg           = Color3.fromRGB(20, 22, 18),
+    titlebar     = Color3.fromRGB(30, 32, 26),
+    border       = Color3.fromRGB(50, 55, 40),
 
     -- Tabs
-    tab          = Color3.fromRGB(18, 18, 15),
-    tabActive    = Color3.fromRGB(30, 28, 22),
-    tabHover     = Color3.fromRGB(36, 34, 26),
+    tab          = Color3.fromRGB(25, 28, 20),
+    tabActive    = Color3.fromRGB(38, 42, 30),
+    tabHover     = Color3.fromRGB(45, 50, 36),
 
     -- Elements
-    element      = Color3.fromRGB(24, 24, 20),
-    elementHov   = Color3.fromRGB(35, 33, 26),
-    section      = Color3.fromRGB(16, 16, 13),
-    sectionBdr   = Color3.fromRGB(50, 46, 32),
+    element      = Color3.fromRGB(28, 32, 24),
+    elementHov   = Color3.fromRGB(40, 45, 32),
+    section      = Color3.fromRGB(22, 25, 18),
+    sectionBdr   = Color3.fromRGB(50, 55, 38),
 
-    -- Text  (warm off-white / muted gold for subtext)
-    text         = Color3.fromRGB(210, 200, 170),
-    subtext      = Color3.fromRGB(140, 130, 100),
-    dimtext      = Color3.fromRGB(75, 70, 50),
+    -- Text  (greenish-grey, muted military style)
+    text         = Color3.fromRGB(180, 190, 160),
+    subtext      = Color3.fromRGB(110, 120, 90),
+    dimtext      = Color3.fromRGB(60, 65, 45),
 
-    -- Accent  (HL1 signature amber-orange — the Lambda orange)
-    accent       = Color3.fromRGB(255, 150, 0),
-    accentHov    = Color3.fromRGB(255, 180, 50),
-    accentDim    = Color3.fromRGB(190, 110, 0),
+    -- Accent  (HL1 military olive-green)
+    accent       = Color3.fromRGB(100, 120, 50),
+    accentHov    = Color3.fromRGB(130, 155, 65),
+    accentDim    = Color3.fromRGB(70, 85, 35),
 
     -- Controls
-    slider       = Color3.fromRGB(32, 30, 24),
-    sliderFill   = Color3.fromRGB(255, 150, 0),
-    check        = Color3.fromRGB(255, 150, 0),
-    checkOff     = Color3.fromRGB(32, 30, 24),
+    slider       = Color3.fromRGB(32, 36, 26),
+    sliderFill   = Color3.fromRGB(100, 120, 50),
+    check        = Color3.fromRGB(100, 120, 50),
+    checkOff     = Color3.fromRGB(32, 36, 26),
 
     -- 3D Bevel  (HL1 raised/sunken edges)
-    bevelLight   = Color3.fromRGB(80, 75, 55),      -- top/left highlight
-    bevelDark    = Color3.fromRGB(6, 6, 4),          -- bottom/right shadow
-    bevelMid     = Color3.fromRGB(45, 42, 30),       -- mid-tone edge
+    bevelLight   = Color3.fromRGB(70, 78, 55),      -- top/left highlight
+    bevelDark    = Color3.fromRGB(8, 10, 6),         -- bottom/right shadow
+    bevelMid     = Color3.fromRGB(40, 45, 30),       -- mid-tone edge
 
     -- Misc
-    danger       = Color3.fromRGB(200, 50, 30),
-    success      = Color3.fromRGB(80, 180, 50),
-    separator    = Color3.fromRGB(50, 46, 32),
+    danger       = Color3.fromRGB(160, 50, 40),
+    success      = Color3.fromRGB(70, 150, 50),
+    separator    = Color3.fromRGB(45, 50, 35),
 }
 
 --------------------------------------------------------------------------------
@@ -215,48 +213,7 @@ local function _getGuiParent()
     return nil
 end
 
---------------------------------------------------------------------------------
--- Draggable (RenderStepped polling — works across all executors)
---------------------------------------------------------------------------------
-
-local function _makeDraggable(gui, handle, connections)
-    local dragging = false
-    local offsetX, offsetY = 0, 0
-    local inset = GuiService:GetGuiInset()
-
-    local c1 = handle.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1
-            or input.UserInputType == Enum.UserInputType.Touch then
-            dragging = true
-            local mouse = UserInputService:GetMouseLocation()
-            local absPos = gui.AbsolutePosition
-            offsetX = absPos.X - mouse.X
-            offsetY = absPos.Y - mouse.Y
-        end
-    end)
-
-    local c2 = UserInputService.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1
-            or input.UserInputType == Enum.UserInputType.Touch then
-            dragging = false
-        end
-    end)
-
-    local c3 = RunService.RenderStepped:Connect(function()
-        if not dragging then return end
-        local mouse = UserInputService:GetMouseLocation()
-        gui.Position = UDim2.fromOffset(
-            mouse.X + offsetX,
-            mouse.Y + offsetY - inset.Y
-        )
-    end)
-
-    if connections then
-        table.insert(connections, c1)
-        table.insert(connections, c2)
-        table.insert(connections, c3)
-    end
-end
+-- (Dragging removed — HL1 menus are static, centered panels)
 
 --------------------------------------------------------------------------------
 -- ██╗   ██╗██╗     ██████╗███████╗
@@ -273,21 +230,21 @@ UILib.__index = UILib
 
 --- Create a new Half-Life 1 style window.
 --- @param title string — Window title
---- @param width number? — Window width (default 560)
---- @param height number? — Window height (default 420)
+--- @param config table? — { width, height, toggleKey }
 --- @return table — Window instance
-function UILib.new(title: string, width: number?, height: number?)
+function UILib.new(title: string, config: any?)
     local self = setmetatable({}, UILib)
-    
+    config = config or {}
+
     self._connections = {}
     self._tabs = {}
     self._activeTab = nil
     self._keybinds = {}
-    self._width  = width  or 560
-    self._height = height or 420
+    self._width  = config.width  or 560
+    self._height = config.height or 420
     self._visible = true
     self._minimized = false
-    self._toggleKey = Enum.KeyCode.RightShift
+    self._toggleKey = config.toggleKey or Enum.KeyCode.RightShift
 
     -- ScreenGui
     self._screenGui = _new("ScreenGui", {
@@ -329,8 +286,7 @@ function UILib.new(title: string, width: number?, height: number?)
         COLORS.titlebar
     )
 
-    -- Drag via title bar
-    _makeDraggable(self._root, self._titleBar, self._connections)
+    -- Static window (no drag in HL1 style)
 
     -- Title text
     local titleLbl = label(self._titleBar, title, 11, COLORS.subtext,
@@ -1130,7 +1086,7 @@ function UILib:AddTab(name: string)
         --- @param callback function? — function(color: Color3)
         --- @return table — { set(color), get() }
         function Section:AddColorPicker(lbl: string, default: any?, callback: any?)
-            local color = default or Color3.fromRGB(255, 150, 0)
+            local color = default or Color3.fromRGB(100, 120, 50)
 
             local row = frame(inner, UDim2.new(1, 0, 0, 22), nil, COLORS.section)
 
@@ -1164,18 +1120,18 @@ function UILib:AddTab(name: string)
                 listLayout(paletteInner, Enum.FillDirection.Horizontal, 4)
             end
 
-            -- Preset colors (HL1 style palette)
+            -- Preset colors (HL1 military style palette)
             local presets = {
-                Color3.fromRGB(255, 150, 0),   -- Lambda Orange
-                Color3.fromRGB(255, 200, 50),  -- Gold
-                Color3.fromRGB(200, 180, 40),  -- Olive Yellow
-                Color3.fromRGB(80, 140, 40),   -- Military Green
-                Color3.fromRGB(40, 120, 160),  -- HEV Blue
-                Color3.fromRGB(200, 50, 30),   -- Danger Red
-                Color3.fromRGB(160, 100, 40),  -- Brown
-                Color3.fromRGB(210, 200, 170), -- Warm White
-                Color3.fromRGB(120, 110, 85),  -- Warm Gray
-                Color3.fromRGB(30, 28, 22),    -- Dark Olive
+                Color3.fromRGB(100, 120, 50),   -- Military Green
+                Color3.fromRGB(130, 155, 65),   -- Light Olive
+                Color3.fromRGB(70, 85, 35),     -- Dark Olive
+                Color3.fromRGB(80, 100, 60),    -- Forest Green
+                Color3.fromRGB(120, 110, 70),   -- Khaki
+                Color3.fromRGB(160, 50, 40),    -- Danger Red
+                Color3.fromRGB(100, 80, 45),    -- Brown
+                Color3.fromRGB(180, 190, 160),  -- Off-White
+                Color3.fromRGB(110, 120, 90),   -- Warm Gray
+                Color3.fromRGB(22, 25, 18),     -- Near Black
             }
 
             for _, presetColor in ipairs(presets) do
