@@ -1,8 +1,8 @@
 --[[
     ╔══════════════════════════════════════════════════════════════════════╗
-    ║  UI_CS  –  CS:GO Source 1 Style UI Library for Roblox Luau         ║
-    ║  Sharp corners · Flat dark palette · Accent stripe · Monospace     ║
-    ║  Compatible with gethui() / syn.protect_gui / CoreGui fallback     ║
+    ║  UI_CS  –  Half-Life 1 Style UI Library for Roblox Luau            ║
+    ║  Sharp corners · Dark olive · Amber/orange accent · Monospace      ║
+    ║  Compatible with gethui() / CoreGui fallback                       ║
     ╚══════════════════════════════════════════════════════════════════════╝
 ]]
 
@@ -31,46 +31,51 @@ local function uid()
 end
 
 --------------------------------------------------------------------------------
--- Palette  (CS:GO Source 1 — flat, dark, sharp, monochrome w/ red accent)
+-- Palette  (Half-Life 1 — dark olive/charcoal, warm amber-orange accent)
 --------------------------------------------------------------------------------
 
 local COLORS = {
-    -- Window
-    bg           = Color3.fromRGB(12, 12, 12),
-    titlebar     = Color3.fromRGB(18, 18, 18),
-    border       = Color3.fromRGB(40, 40, 40),
+    -- Window  (dark charcoal with subtle warm olive tint)
+    bg           = Color3.fromRGB(14, 14, 12),
+    titlebar     = Color3.fromRGB(22, 22, 18),
+    border       = Color3.fromRGB(55, 50, 35),
 
     -- Tabs
-    tab          = Color3.fromRGB(16, 16, 16),
-    tabActive    = Color3.fromRGB(24, 24, 24),
-    tabHover     = Color3.fromRGB(28, 28, 28),
+    tab          = Color3.fromRGB(18, 18, 15),
+    tabActive    = Color3.fromRGB(30, 28, 22),
+    tabHover     = Color3.fromRGB(36, 34, 26),
 
     -- Elements
-    element      = Color3.fromRGB(22, 22, 22),
-    elementHov   = Color3.fromRGB(30, 30, 30),
-    section      = Color3.fromRGB(15, 15, 15),
-    sectionBdr   = Color3.fromRGB(35, 35, 35),
+    element      = Color3.fromRGB(24, 24, 20),
+    elementHov   = Color3.fromRGB(35, 33, 26),
+    section      = Color3.fromRGB(16, 16, 13),
+    sectionBdr   = Color3.fromRGB(50, 46, 32),
 
-    -- Text
-    text         = Color3.fromRGB(200, 200, 200),
-    subtext      = Color3.fromRGB(120, 120, 120),
-    dimtext      = Color3.fromRGB(70, 70, 70),
+    -- Text  (warm off-white / muted gold for subtext)
+    text         = Color3.fromRGB(210, 200, 170),
+    subtext      = Color3.fromRGB(140, 130, 100),
+    dimtext      = Color3.fromRGB(75, 70, 50),
 
-    -- Accent (CS:GO signature red-orange)
-    accent       = Color3.fromRGB(170, 55, 40),
-    accentHov    = Color3.fromRGB(200, 70, 50),
-    accentDim    = Color3.fromRGB(130, 40, 30),
+    -- Accent  (HL1 signature amber-orange — the Lambda orange)
+    accent       = Color3.fromRGB(255, 150, 0),
+    accentHov    = Color3.fromRGB(255, 180, 50),
+    accentDim    = Color3.fromRGB(190, 110, 0),
 
     -- Controls
-    slider       = Color3.fromRGB(30, 30, 30),
-    sliderFill   = Color3.fromRGB(170, 55, 40),
-    check        = Color3.fromRGB(170, 55, 40),
-    checkOff     = Color3.fromRGB(30, 30, 30),
+    slider       = Color3.fromRGB(32, 30, 24),
+    sliderFill   = Color3.fromRGB(255, 150, 0),
+    check        = Color3.fromRGB(255, 150, 0),
+    checkOff     = Color3.fromRGB(32, 30, 24),
+
+    -- 3D Bevel  (HL1 raised/sunken edges)
+    bevelLight   = Color3.fromRGB(80, 75, 55),      -- top/left highlight
+    bevelDark    = Color3.fromRGB(6, 6, 4),          -- bottom/right shadow
+    bevelMid     = Color3.fromRGB(45, 42, 30),       -- mid-tone edge
 
     -- Misc
-    danger       = Color3.fromRGB(180, 35, 35),
-    success      = Color3.fromRGB(45, 160, 60),
-    separator    = Color3.fromRGB(35, 35, 35),
+    danger       = Color3.fromRGB(200, 50, 30),
+    success      = Color3.fromRGB(80, 180, 50),
+    separator    = Color3.fromRGB(50, 46, 32),
 }
 
 --------------------------------------------------------------------------------
@@ -108,7 +113,7 @@ local function tween(obj, goals, dur)
 end
 
 --------------------------------------------------------------------------------
--- Primitives (sharp, flat — no rounded corners by default)
+-- Primitives (sharp, HL1-style 3D beveled)
 --------------------------------------------------------------------------------
 
 local function frame(parent, size, pos, color, clipDesc)
@@ -127,6 +132,33 @@ local function stroke(parent, color, thickness)
         Color     = color or COLORS.border,
         Thickness = thickness or 1,
     }, parent)
+end
+
+--- HL1 3D bevel: 4 edge frames simulating raised/sunken look.
+--- "raised" = light top-left, dark bottom-right (buttons, panels)
+--- "sunken" = dark top-left, light bottom-right (inputs, troughs)
+local function bevelRaised(parent, thickness)
+    local t = thickness or 2
+    -- Top highlight
+    frame(parent, UDim2.new(1, 0, 0, t), UDim2.new(0, 0, 0, 0), COLORS.bevelLight).ZIndex = 8
+    -- Left highlight
+    frame(parent, UDim2.new(0, t, 1, 0), UDim2.new(0, 0, 0, 0), COLORS.bevelLight).ZIndex = 8
+    -- Bottom shadow
+    frame(parent, UDim2.new(1, 0, 0, t), UDim2.new(0, 0, 1, -t), COLORS.bevelDark).ZIndex = 8
+    -- Right shadow
+    frame(parent, UDim2.new(0, t, 1, 0), UDim2.new(1, -t, 0, 0), COLORS.bevelDark).ZIndex = 8
+end
+
+local function bevelSunken(parent, thickness)
+    local t = thickness or 2
+    -- Top shadow (dark = sunken)
+    frame(parent, UDim2.new(1, 0, 0, t), UDim2.new(0, 0, 0, 0), COLORS.bevelDark).ZIndex = 8
+    -- Left shadow
+    frame(parent, UDim2.new(0, t, 1, 0), UDim2.new(0, 0, 0, 0), COLORS.bevelDark).ZIndex = 8
+    -- Bottom highlight
+    frame(parent, UDim2.new(1, 0, 0, t), UDim2.new(0, 0, 1, -t), COLORS.bevelLight).ZIndex = 8
+    -- Right highlight
+    frame(parent, UDim2.new(0, t, 1, 0), UDim2.new(1, -t, 0, 0), COLORS.bevelLight).ZIndex = 8
 end
 
 local function padding(parent, left, top, right, bottom)
@@ -239,7 +271,7 @@ end
 local UILib = {}
 UILib.__index = UILib
 
---- Create a new CS:GO Source 1 style window.
+--- Create a new Half-Life 1 style window.
 --- @param title string — Window title
 --- @param width number? — Window width (default 560)
 --- @param height number? — Window height (default 420)
@@ -270,7 +302,7 @@ function UILib.new(title: string, width: number?, height: number?)
     self._screenGui.Parent = _getGuiParent()
 
     -- ═════════════════════════════════════════════════════════════════════
-    -- Root frame (sharp, opaque, bordered — the main CS:GO window)
+    -- Root frame (sharp, opaque, beveled — the main HL1 window)
     -- ═════════════════════════════════════════════════════════════════════
 
     self._root = frame(self._screenGui,
@@ -279,15 +311,15 @@ function UILib.new(title: string, width: number?, height: number?)
         COLORS.bg, true
     )
     self._root.Active = true
-    stroke(self._root, COLORS.border, 1)
+    bevelRaised(self._root, 2)
 
-    -- Top accent line (colored strip — CS:GO signature)
-    local accentLine = frame(self._root,
-        UDim2.new(1, 0, 0, 2),
-        UDim2.new(0, 0, 0, 0),
+    -- HL1 top accent bar (thicker, raised)
+    local accentBar = frame(self._root,
+        UDim2.new(1, -4, 0, 3),
+        UDim2.new(0, 2, 0, 2),
         COLORS.accent
     )
-    if accentLine then accentLine.ZIndex = 10 end
+    if accentBar then accentBar.ZIndex = 10 end
 
     -- ─── Title bar ──────────────────────────────────────────────────────
 
@@ -369,8 +401,9 @@ function UILib.new(title: string, width: number?, height: number?)
         table.insert(self._connections, c3)
     end
 
-    -- Title bar bottom border
-    frame(self._root, UDim2.new(1, 0, 0, 1), UDim2.new(0, 0, 0, 32), COLORS.border)
+    -- Title bar bottom bevel
+    frame(self._root, UDim2.new(1, 0, 0, 1), UDim2.new(0, 0, 0, 32), COLORS.bevelDark)
+    frame(self._root, UDim2.new(1, 0, 0, 1), UDim2.new(0, 0, 0, 33), COLORS.bevelLight)
 
     -- ─── Tab bar (horizontal, top) ──────────────────────────────────────
 
@@ -384,8 +417,9 @@ function UILib.new(title: string, width: number?, height: number?)
     listLayout(self._tabBar, Enum.FillDirection.Horizontal, 0,
         Enum.HorizontalAlignment.Left, Enum.VerticalAlignment.Center)
 
-    -- Tab bar bottom border
-    frame(self._root, UDim2.new(1, 0, 0, 1), UDim2.new(0, 0, 0, tabBarY + tabBarH), COLORS.border)
+    -- Tab bar bottom bevel
+    frame(self._root, UDim2.new(1, 0, 0, 1), UDim2.new(0, 0, 0, tabBarY + tabBarH), COLORS.bevelDark)
+    frame(self._root, UDim2.new(1, 0, 0, 1), UDim2.new(0, 0, 0, tabBarY + tabBarH + 1), COLORS.bevelLight)
 
     -- ─── Content area ───────────────────────────────────────────────────
 
@@ -565,16 +599,16 @@ function UILib:AddTab(name: string)
             UDim2.new(1, -4, 0, 0), nil, COLORS.section)
         if sectionFrame then
             pcall(function() sectionFrame.AutomaticSize = Enum.AutomaticSize.Y end)
-            stroke(sectionFrame, COLORS.sectionBdr, 1)
+            bevelSunken(sectionFrame, 2)
         end
 
-        -- Accent left bar (colored strip — CS:GO signature detail)
+        -- HL1 accent left bar (raised strip on left edge)
         local leftBar = frame(sectionFrame,
-            UDim2.new(0, 2, 1, 0),
-            UDim2.new(0, 0, 0, 0),
+            UDim2.new(0, 3, 1, -4),
+            UDim2.new(0, 2, 0, 2),
             COLORS.accent
         )
-        if leftBar then leftBar.ZIndex = 5 end
+        if leftBar then leftBar.ZIndex = 9 end
 
         -- Inner container
         local inner = frame(sectionFrame, UDim2.new(1, 0, 0, 0), nil, COLORS.section)
@@ -615,7 +649,7 @@ function UILib:AddTab(name: string)
                 UDim2.new(0, 12, 0, 12),
                 UDim2.new(0, 0, 0.5, -6),
                 state and COLORS.check or COLORS.checkOff)
-            stroke(box, COLORS.border, 1)
+            bevelSunken(box, 1)
 
             -- Checkmark
             local checkmark = label(box, "✓", 9,
@@ -788,7 +822,7 @@ function UILib:AddTab(name: string)
                 Font            = Enum.Font.Code,
                 AutoButtonColor = false,
             }, inner)
-            if btn then stroke(btn, COLORS.border, 1) end
+            if btn then bevelRaised(btn, 1) end
 
             if btn then
                 local c1 = btn.MouseEnter:Connect(function()
@@ -836,7 +870,7 @@ function UILib:AddTab(name: string)
             end
 
             local header = frame(wrapper, UDim2.new(1, 0, 0, 24), nil, COLORS.element)
-            stroke(header, COLORS.border, 1)
+            bevelSunken(header, 1)
 
             local selLabel = label(header, selected, 11, COLORS.text, Enum.Font.Code)
             if selLabel then
@@ -858,7 +892,7 @@ function UILib:AddTab(name: string)
                 list.ClipsDescendants = true
                 list.ZIndex  = 20
                 list.Visible = false
-                stroke(list, COLORS.border, 1)
+                bevelSunken(list, 1)
             end
 
             local listInner = frame(list, UDim2.new(1, 0, 0, 0), nil, COLORS.element)
@@ -1000,16 +1034,15 @@ function UILib:AddTab(name: string)
             }, container)
 
             if box then
-                stroke(box, COLORS.border, 1)
+                bevelSunken(box, 1)
                 padding(box, 8)
 
                 local c1 = box.Focused:Connect(function()
-                    local s = box:FindFirstChildWhichIsA("UIStroke")
-                    if s then tween(s, {Color = COLORS.accent}) end
+                    -- HL1 focus: tint the background slightly brighter
+                    tween(box, {BackgroundColor3 = COLORS.elementHov})
                 end)
                 local c2 = box.FocusLost:Connect(function(enter)
-                    local s = box:FindFirstChildWhichIsA("UIStroke")
-                    if s then tween(s, {Color = COLORS.border}) end
+                    tween(box, {BackgroundColor3 = COLORS.element})
                     _safecall(callback, box.Text, enter)
                 end)
                 table.insert(conns, c1)
@@ -1053,7 +1086,7 @@ function UILib:AddTab(name: string)
                 Font            = Enum.Font.Code,
                 AutoButtonColor = false,
             }, row)
-            if keyBtn then stroke(keyBtn, COLORS.border, 1) end
+            if keyBtn then bevelRaised(keyBtn, 1) end
 
             if keyBtn then
                 local c1 = keyBtn.MouseButton1Click:Connect(function()
@@ -1097,7 +1130,7 @@ function UILib:AddTab(name: string)
         --- @param callback function? — function(color: Color3)
         --- @return table — { set(color), get() }
         function Section:AddColorPicker(lbl: string, default: any?, callback: any?)
-            local color = default or Color3.fromRGB(170, 55, 40)
+            local color = default or Color3.fromRGB(255, 150, 0)
 
             local row = frame(inner, UDim2.new(1, 0, 0, 22), nil, COLORS.section)
 
@@ -1112,7 +1145,7 @@ function UILib:AddTab(name: string)
                 UDim2.new(0, 20, 0, 14),
                 UDim2.new(1, -24, 0.5, -7),
                 color)
-            stroke(swatch, COLORS.border, 1)
+            bevelRaised(swatch, 1)
 
             local pickerOpen = false
 
@@ -1121,7 +1154,7 @@ function UILib:AddTab(name: string)
             if palette then
                 palette.Visible = false
                 palette.ClipsDescendants = true
-                stroke(palette, COLORS.border, 1)
+                bevelSunken(palette, 1)
             end
 
             local paletteInner = frame(palette, UDim2.new(1, 0, 0, 0), nil, COLORS.element)
@@ -1131,18 +1164,18 @@ function UILib:AddTab(name: string)
                 listLayout(paletteInner, Enum.FillDirection.Horizontal, 4)
             end
 
-            -- Preset colors (CS:GO style palette)
+            -- Preset colors (HL1 style palette)
             local presets = {
-                Color3.fromRGB(170, 55, 40),   -- Red
-                Color3.fromRGB(200, 120, 30),  -- Orange
-                Color3.fromRGB(200, 200, 40),  -- Yellow
-                Color3.fromRGB(45, 160, 60),   -- Green
-                Color3.fromRGB(40, 140, 200),  -- Blue
-                Color3.fromRGB(140, 60, 200),  -- Purple
-                Color3.fromRGB(200, 60, 140),  -- Pink
-                Color3.fromRGB(200, 200, 200), -- White
-                Color3.fromRGB(120, 120, 120), -- Gray
-                Color3.fromRGB(30, 30, 30),    -- Dark
+                Color3.fromRGB(255, 150, 0),   -- Lambda Orange
+                Color3.fromRGB(255, 200, 50),  -- Gold
+                Color3.fromRGB(200, 180, 40),  -- Olive Yellow
+                Color3.fromRGB(80, 140, 40),   -- Military Green
+                Color3.fromRGB(40, 120, 160),  -- HEV Blue
+                Color3.fromRGB(200, 50, 30),   -- Danger Red
+                Color3.fromRGB(160, 100, 40),  -- Brown
+                Color3.fromRGB(210, 200, 170), -- Warm White
+                Color3.fromRGB(120, 110, 85),  -- Warm Gray
+                Color3.fromRGB(30, 28, 22),    -- Dark Olive
             }
 
             for _, presetColor in ipairs(presets) do
@@ -1154,23 +1187,13 @@ function UILib:AddTab(name: string)
                     AutoButtonColor = false,
                 }, paletteInner)
                 if colorBtn then
-                    stroke(colorBtn, COLORS.border, 1)
+                    bevelRaised(colorBtn, 1)
                     local c1 = colorBtn.MouseButton1Click:Connect(function()
                         color = presetColor
                         if swatch then tween(swatch, {BackgroundColor3 = color}) end
                         _safecall(callback, color)
                     end)
-                    local c2 = colorBtn.MouseEnter:Connect(function()
-                        local s = colorBtn:FindFirstChildWhichIsA("UIStroke")
-                        if s then tween(s, {Color = COLORS.text}) end
-                    end)
-                    local c3 = colorBtn.MouseLeave:Connect(function()
-                        local s = colorBtn:FindFirstChildWhichIsA("UIStroke")
-                        if s then tween(s, {Color = COLORS.border}) end
-                    end)
                     table.insert(conns, c1)
-                    table.insert(conns, c2)
-                    table.insert(conns, c3)
                 end
             end
 
@@ -1259,9 +1282,9 @@ function UILib:Notify(text: string, duration: number?, color: any?)
     }, self._screenGui)
 
     if notif then
-        stroke(notif, COLORS.border, 1)
+        bevelRaised(notif, 1)
         -- Top accent bar
-        frame(notif, UDim2.new(1, 0, 0, 2), UDim2.new(0, 0, 0, 0), color)
+        frame(notif, UDim2.new(1, -2, 0, 2), UDim2.new(0, 1, 0, 1), color)
 
         local ntxt = label(notif, text, 10, COLORS.text, Enum.Font.Code)
         if ntxt then
