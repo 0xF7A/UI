@@ -383,8 +383,7 @@ function lib.new(t, x, y, kc)
 		local df = p("Frame", {
 			Name = "DdWrap", Parent = (lib._cp or g),
 			Size = U2(1, -10, 0, 26), Position = U2(0, 5, 0, x),
-			BackgroundColor3 = cl.bg3, BorderSizePixel = 0,
-			ZIndex = 5, ClipsDescendants = false
+			BackgroundColor3 = cl.bg3, BorderSizePixel = 0, ZIndex = 5
 		})
 		br(df, nil, nil, true)
 
@@ -400,15 +399,20 @@ function lib.new(t, x, y, kc)
 		local arrow = p("TextLabel", {
 			Name = "Arr", Parent = sel,
 			Size = U2(0, 20, 1, 0), Position = U2(1, -22, 0, 0),
-			BackgroundTransparency = 1, Text = "▼",
+			BackgroundTransparency = 1, Text = "\226\150\188",
 			Font = ft, TextSize = 10, TextColor3 = cl.tx2, ZIndex = 7
 		})
 
+		local sg = df
+		while sg and not sg:IsA("ScreenGui") do sg = sg.Parent end
+		sg = sg or g
+
 		local lst = p("Frame", {
-			Name = "List", Parent = df,
-			Size = U2(1, 0, 0, 0), Position = U2(0, 0, 1, 2),
+			Name = "DdList", Parent = sg,
+			Size = U2(0, 0, 0, 0),
+			Position = U2(0, 0, 0, 0),
 			BackgroundColor3 = cl.bg, BorderSizePixel = 0,
-			Visible = false, ZIndex = 50, ClipsDescendants = true
+			Visible = false, ZIndex = 100, ClipsDescendants = true
 		})
 		br(lst, nil, nil, true)
 
@@ -416,6 +420,13 @@ function lib.new(t, x, y, kc)
 		local items = kc or {}
 		local _ch = nil
 		local cur = nil
+
+		local function posLst()
+			local ap = df.AbsolutePosition
+			local as = df.AbsoluteSize
+			lst.Position = U2(0, ap.X, 0, ap.Y + as.Y + 2)
+			lst.Size = U2(0, as.X, 0, #items * 22 + 4)
+		end
 
 		local function build()
 			for _, c in ipairs(lst:GetChildren()) do
@@ -427,7 +438,7 @@ function lib.new(t, x, y, kc)
 					Size = U2(1, -4, 0, 22), Position = U2(0, 2, 0, (i-1)*22 + 2),
 					BackgroundColor3 = cl.bg2, BorderSizePixel = 0,
 					Text = item, Font = ft, TextSize = fs - 1,
-					TextColor3 = cl.tx, ZIndex = 51, AutoButtonColor = false
+					TextColor3 = cl.tx, ZIndex = 101, AutoButtonColor = false
 				})
 				ib.MouseEnter:Connect(function()
 					anim(ib, {BackgroundColor3 = cl.hov})
@@ -440,11 +451,10 @@ function lib.new(t, x, y, kc)
 					sel.Text = item
 					open = false
 					lst.Visible = false
-					lst.Size = U2(1, 0, 0, 0)
 					if _ch then _ch(item) end
 				end)
 			end
-			lst.Size = U2(1, 0, 0, #items * 22 + 4)
+			posLst()
 		end
 
 		sel.MouseButton1Click:Connect(function()
@@ -455,6 +465,10 @@ function lib.new(t, x, y, kc)
 			else
 				lst.Visible = false
 			end
+		end)
+
+		df:GetPropertyChangedSignal("AbsolutePosition"):Connect(function()
+			if open then posLst() end
 		end)
 
 		local obj = {frame = df, selected = sel, list = lst}
