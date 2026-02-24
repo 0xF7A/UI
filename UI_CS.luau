@@ -230,11 +230,21 @@ UILib.__index = UILib
 
 --- Create a new Half-Life 1 style window.
 --- @param title string — Window title
---- @param config table? — { width, height, toggleKey }
+--- @param configOrWidth table|number? — Config table { width, height, toggleKey } or legacy width number
+--- @param legacyHeight number? — Legacy height (only if second arg is a number)
 --- @return table — Window instance
-function UILib.new(title: string, config: any?)
+function UILib.new(title: string, configOrWidth: any?, legacyHeight: number?)
     local self = setmetatable({}, UILib)
-    config = config or {}
+
+    -- Backwards-compatible: accept (title, width, height) or (title, { ... })
+    local config
+    if type(configOrWidth) == "number" then
+        config = { width = configOrWidth, height = legacyHeight }
+    elseif type(configOrWidth) == "table" then
+        config = configOrWidth
+    else
+        config = {}
+    end
 
     self._connections = {}
     self._tabs = {}
